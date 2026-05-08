@@ -10,6 +10,7 @@ Setup:
 4. Subir a Replit/PythonAnywhere y ejecutar: python trading_monitor_24h.py
 """
 
+from __future__ import annotations
 import requests
 import pandas as pd
 import matplotlib
@@ -21,6 +22,7 @@ import time
 import io
 import logging
 from datetime import datetime, timezone
+from typing import Optional, Dict, List
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 log = logging.getLogger(__name__)
@@ -35,10 +37,10 @@ OUTPUTSIZE = 220   # suficiente para EMA200 + Fibonacci
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Rastreo de señales ya enviadas para no repetir
-sent_signals: dict[str, str] = {}
+sent_signals: Dict[str, str] = {}
 
 
-def fetch_ohlcv(symbol: str) -> pd.DataFrame | None:
+def fetch_ohlcv(symbol: str) -> Optional[pd.DataFrame]:
     url = "https://api.twelvedata.com/time_series"
     params = {
         "symbol": symbol,
@@ -84,7 +86,7 @@ def calc_fibonacci(df: pd.DataFrame) -> dict:
     }
 
 
-def check_signals(symbol: str, df: pd.DataFrame) -> list[dict]:
+def check_signals(symbol: str, df: pd.DataFrame) -> List[dict]:
     signals = []
     close   = df["close"]
     high    = df["high"]
