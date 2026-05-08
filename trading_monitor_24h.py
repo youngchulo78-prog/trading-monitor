@@ -442,9 +442,21 @@ def run_monitor():
 
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"OK")
+        if self.path == "/test":
+            # Dispara un mensaje de prueba a Telegram y devuelve el resultado
+            url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+            try:
+                r = requests.post(url, data={"chat_id": TELEGRAM_CHATID, "text": "RAILWAY TEST OK"}, timeout=15)
+                body = f"Telegram status={r.status_code} body={r.text[:300]}".encode()
+            except Exception as e:
+                body = f"Telegram ERROR: {e}".encode()
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(body)
+        else:
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"OK")
     def log_message(self, *args):
         pass
 
