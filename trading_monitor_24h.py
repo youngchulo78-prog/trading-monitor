@@ -393,8 +393,11 @@ def send_telegram_photo(caption: str, img_bytes: bytes, symbol: str):
 def send_telegram_text(text: str):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     try:
-        requests.post(url, data={"chat_id": TELEGRAM_CHATID, "text": text}, timeout=10)
+        r = requests.post(url, data={"chat_id": TELEGRAM_CHATID, "text": text}, timeout=15)
+        print(f"[TELEGRAM] status={r.status_code} body={r.text[:200]}", flush=True)
+        log.info(f"Telegram text status={r.status_code}")
     except Exception as e:
+        print(f"[TELEGRAM ERROR] {e}", flush=True)
         log.error(f"Telegram text error: {e}")
 
 
@@ -454,6 +457,7 @@ def start_health_server():
 
 # ─── MAIN ────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
+    print("[INICIO] Trading Monitor arrancando...", flush=True)
     log.info("Trading Monitor 24/7 iniciado")
     log.info(f"Símbolos: {SYMBOLS}")
     log.info(f"Intervalo chequeo: cada 15 minutos")
@@ -461,6 +465,10 @@ if __name__ == "__main__":
     if TWELVE_DATA_KEY == "TU_API_KEY_AQUI":
         log.error("Debes poner tu API key de Twelve Data en TWELVE_DATA_KEY")
         exit(1)
+
+    # Test de Telegram ANTES de todo lo demás
+    print(f"[TELEGRAM TEST] Enviando prueba a chat_id={TELEGRAM_CHATID}...", flush=True)
+    send_telegram_text("RAILWAY ONLINE - Monitor iniciado correctamente")
 
     # Servidor HTTP para Railway (requerido)
     start_health_server()
