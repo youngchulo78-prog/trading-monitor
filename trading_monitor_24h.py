@@ -21,6 +21,9 @@ import schedule
 import time
 import io
 import logging
+import os
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 from datetime import datetime, timezone
 from typing import Optional, Dict, List
 
@@ -434,6 +437,21 @@ def run_monitor():
         time.sleep(2)  # respetar rate limit API
 
 
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"OK")
+    def log_message(self, *args):
+        pass
+
+def start_health_server():
+    port = int(os.environ.get("PORT", 8080))
+    server = HTTPServer(("0.0.0.0", port), HealthHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    log.info(f"Health server en puerto {port}")
+
 # ─── MAIN ────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     log.info("Trading Monitor 24/7 iniciado")
@@ -441,9 +459,11 @@ if __name__ == "__main__":
     log.info(f"Intervalo chequeo: cada 15 minutos")
 
     if TWELVE_DATA_KEY == "TU_API_KEY_AQUI":
-        log.error("⚠️  Debes poner tu API key de Twelve Data en TWELVE_DATA_KEY")
-        log.error("   Registrate gratis en https://twelvedata.com")
+        log.error("Debes poner tu API key de Twelve Data en TWELVE_DATA_KEY")
         exit(1)
+
+    # Servidor HTTP para Railway (requerido)
+    start_health_server()
 
     # Ejecutar inmediatamente al arrancar
     send_heartbeat()
