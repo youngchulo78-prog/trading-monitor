@@ -1,5 +1,5 @@
 """
-Trading Monitor 24/7 v2.0 — XAUUSD, BTCUSD, EURUSD, GBPUSD
+Trading Monitor 24/7 v2.0 — XAUUSD, BTCUSD, EURUSD, GBPUSD, EURJPY, US100, US30
 - Señales originales mantenidas
 - Reversión alcista/bajista con TPs en Fibonacci
 - Pullback a EMA50
