@@ -685,7 +685,7 @@ def send_telegram_text(text: str):
 def send_heartbeat():
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     send_telegram_text(
-        f"💓 MONITOR ACTIVO — {now}\n"
+        f"💸 MONITOR ACTIVO — {now}\n"
         f"Pares: XAUUSD, BTCUSD, EURUSD, GBPUSD, US100, EURJPY, US30\n"
         f"Velas: 30M | Revision: cada 15min\n"
         f"Señales: Cross, Reversion, Pullback, Breakout, Estructura\n"
