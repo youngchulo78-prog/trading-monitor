@@ -29,8 +29,9 @@ log = logging.getLogger(__name__)
 # ─── CONFIGURACIÓN ───────────────────────────────────────────────────────────
 TWELVE_DATA_KEY = "543a4e7283e14a0bb52b21f6c2cf2d7b"
 TELEGRAM_TOKEN  = "7910004144:AAGGLubMLgTjfmQbVrjcAVFPl5fnVMVzEu4"
-TELEGRAM_CHATID = "8178693253"
-SYMBOLS    = ["XAU/USD", "BTC/USD", "EUR/USD", "GBP/USD", "US100", "EUR/JPY", "US30"]
+TELEGRAM_CHATID = "8178693253" 
+SYMBOLS = ["XAU/USD", "BTC/USD", "EUR/USD", "GBP/USD", "NASDAQ100", "EUR/JPY", "DJ30"]
+
 OUTPUTSIZE = 220
 # ─────────────────────────────────────────────────────────────────────────────
 
