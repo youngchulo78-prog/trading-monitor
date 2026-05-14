@@ -28,7 +28,9 @@ log = logging.getLogger(__name__)
 TWELVE_DATA_KEY = "543a4e7283e14a0bb52b21f6c2cf2d7b"
 TELEGRAM_TOKEN  = "7910004144:AAGGLubMLgTjfmQbVrjcAVFPl5fnVMVzEu4"
 TELEGRAM_CHATID = "8178693253"
-SYMBOLS  = ["XAU/USD", "BTC/USD", "EUR/USD", "GBP/USD", "QQQ", "EUR/JPY", "DIA"]
+SYMBOLS_TWELVE = ["XAU/USD", "BTC/USD", "EUR/USD", "GBP/USD"]
+SYMBOLS_YAHOO  = ["^NDX", "^DJI", "EURJPY=X"]
+SYMBOL_NAMES   = {"^NDX": "US100", "^DJI": "US30", "EURJPY=X": "EURJPY"}
 INTERVAL = "30min"
 OUTPUTSIZE = 220
 # ─────────────────────────────────────────────────────────────────────────────
@@ -55,6 +57,37 @@ def fetch_ohlcv(symbol: str, interval: str = "30min") -> Optional[pd.DataFrame]:
         return df
     except Exception as e:
         log.error(f"{symbol} {interval}: {e}")
+        return None
+
+
+
+def fetch_yahoo(symbol: str, interval: str = "30m") -> Optional[pd.DataFrame]:
+    """Obtiene datos de Yahoo Finance para indices y EURJPY."""
+    try:
+        import urllib.request
+        import json
+        # Convertir intervalo
+        iv_map = {"30min": "30m", "1h": "60m", "4h": "1h", "1day": "1d", "5min": "5m", "15min": "15m"}
+        yf_interval = iv_map.get(interval, "30m")
+        period = "60d" if yf_interval in ["1d"] else "5d"
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval={yf_interval}&range={period}"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read())
+        result = data["chart"]["result"][0]
+        timestamps = result["timestamp"]
+        ohlcv = result["indicators"]["quote"][0]
+        df = pd.DataFrame({
+            "open":   ohlcv["open"],
+            "high":   ohlcv["high"],
+            "low":    ohlcv["low"],
+            "close":  ohlcv["close"],
+            "volume": ohlcv.get("volume", [0]*len(timestamps))
+        }, index=pd.to_datetime(timestamps, unit="s"))
+        df = df.dropna()
+        return df
+    except Exception as e:
+        log.error(f"Yahoo fetch error {symbol}: {e}")
         return None
 
 
@@ -162,13 +195,18 @@ def calc_liquidity_levels(df: pd.DataFrame) -> dict:
     }
 
 
-def get_timeframe_trends(symbol: str) -> dict:
-    """Obtiene tendencia en 5M, 15M, 30M, 1H, 4H, 1D."""
+def get_timeframe_trends(symbol: str, source: str = "twelve", display_name: str = "") -> dict:
+    """Obtiene tendencia en 1H, 4H, 1D."""
     trends = {}
-    intervals = [("5min", "5M"), ("15min", "15M"), ("30min", "30M"),
-                 ("1h", "1H"), ("4h", "4H"), ("1day", "1D")]
+    if source == "yahoo":
+        intervals = [("60m", "1H"), ("1h", "4H"), ("1d", "1D")]
+    else:
+        intervals = [("1h", "1H"), ("4h", "4H"), ("1day", "1D")]
     for interval, label in intervals:
-        df = fetch_ohlcv(symbol, interval)
+        if source == "yahoo":
+            df = fetch_yahoo(symbol, interval)
+        else:
+            df = fetch_ohlcv(symbol, interval)
         if df is None or len(df) < 50:
             trends[label] = "neutral"
             continue
@@ -685,7 +723,7 @@ def send_telegram_text(text: str):
 def send_heartbeat():
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     send_telegram_text(
-        f"💸 MONITOR ACTIVO — {now}\n"
+        f"💓 MONITOR ACTIVO — {now}\n"
         f"Pares: XAUUSD, BTCUSD, EURUSD, GBPUSD, US100, EURJPY, US30\n"
         f"Velas: 30M | Revision: cada 15min\n"
         f"Señales: Cross, Reversion, Pullback, Breakout, Estructura\n"
@@ -695,18 +733,23 @@ def send_heartbeat():
 
 def run_monitor():
     log.info("=== Ciclo iniciado ===")
-    for symbol in SYMBOLS:
-        df = fetch_ohlcv(symbol, "30min")
+    all_symbols = [(s, "twelve") for s in SYMBOLS_TWELVE] + [(s, "yahoo") for s in SYMBOLS_YAHOO]
+    for symbol, source in all_symbols:
+        display_name = SYMBOL_NAMES.get(symbol, symbol)
+        if source == "yahoo":
+            df = fetch_yahoo(symbol, "30m")
+        else:
+            df = fetch_ohlcv(symbol, "30min")
         if df is None or len(df) < 210:
-            log.warning(f"{symbol}: datos insuficientes")
+            log.warning(f"{display_name}: datos insuficientes")
             continue
 
-        signals = check_signals(symbol, df)
+        signals = check_signals(display_name, df)
 
         trends = {}
         if signals:
-            log.info(f"{symbol}: obteniendo multi-timeframe...")
-            trends = get_timeframe_trends(symbol)
+            log.info(f"{display_name}: obteniendo multi-timeframe...")
+            trends = get_timeframe_trends(symbol, source, display_name)
 
         for sig in signals:
             key = f"{symbol}_{sig['type']}"
@@ -721,7 +764,7 @@ def run_monitor():
             time.sleep(2)
 
         if not signals:
-            log.info(f"{symbol}: sin señales")
+            log.info(f"{display_name}: sin señales")
         time.sleep(3)
 
 
@@ -776,3 +819,4 @@ if __name__ == "__main__":
     while True:
         schedule.run_pending()
         time.sleep(30)
+ 
