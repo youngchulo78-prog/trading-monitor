@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 TWELVE_DATA_KEY = "543a4e7283e14a0bb52b21f6c2cf2d7b"
 TELEGRAM_TOKEN  = "7910004144:AAGGLubMLgTjfmQbVrjcAVFPl5fnVMVzEu4"
 TELEGRAM_CHATID = "8178693253"
-SYMBOLS  = ["XAU/USD", "BTC/USD", "EUR/USD", "GBP/USD", "NDX", "EUR/JPY", "DJI"]
+SYMBOLS  = ["XAU/USD", "BTC/USD", "EUR/USD", "GBP/USD", "QQQ", "EUR/JPY", "DIA"]
 INTERVAL = "30min"
 OUTPUTSIZE = 220
 # ─────────────────────────────────────────────────────────────────────────────
